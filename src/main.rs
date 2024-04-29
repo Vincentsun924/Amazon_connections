@@ -3,6 +3,8 @@ use std::io::{BufRead, BufReader};
 use rand::seq::SliceRandom;
 
 
+//test 
+
 fn read_file(path: &str) -> Vec<(u32, u32)> {
     let mut result = Vec::new();
     let file = File::open(path).expect("Could not open file");
