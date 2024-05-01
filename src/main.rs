@@ -2,9 +2,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use rand::seq::SliceRandom;
 
-
-//test 
-
 fn read_file(path: &str) -> Vec<(u32, u32)> {
     let mut result = Vec::new();
     let file = File::open(path).expect("Could not open file");
@@ -25,6 +22,11 @@ fn read_file(path: &str) -> Vec<(u32, u32)> {
 fn main() {
     let edges = read_file("amazon.txt");
     let nodes = samples(&edges);
+
+    // Calculate the maximum node number
+    let max_node = edges.iter().map(|&(src, dest)| src.max(dest)).max().unwrap_or(0);
+    let n = max_node as usize + 1;
+
     let mut node_connections_formatted = Vec::new();
 
     // Get the source nodes and their connections
@@ -37,15 +39,28 @@ fn main() {
             .iter()
             .map(|&dest| (node.clone(), dest)) // Clone node to avoid moving it
             .collect::<Vec<(u32, u32)>>(); // Store as vector of tuples
-        node_connections_formatted.push(formatted_connections);
+        node_connections_formatted.extend(formatted_connections);
     }
     println!("Nodes: {:?}", nodes);
     println!("Node Connections: {:?}", node_connections_formatted);
+
+    // Print out the adjacency list
+    println!("Adjacency List:");
+    let mut edges_flat = node_connections_formatted
+        .iter()
+        .map(|&(src, dest)| (src as usize, dest as usize))
+        .collect::<ListOfEdges>();
+    edges_flat.sort();
+    let graph = Graph::create_undirected(n, &edges_flat);
+    for (i, l) in graph.outedges.iter().enumerate() {
+        if !l.is_empty() { // Print only if the connection list is not empty
+            println!("{}: {:?}", i, l);
+        }
+    }
 }
 
 
-
-//test
+// Test
 
 fn samples(edges: &Vec<(u32, u32)>) -> Vec<u32> {
     // Shuffle the edges randomly
@@ -64,7 +79,6 @@ fn samples(edges: &Vec<(u32, u32)>) -> Vec<u32> {
     nodes
 }
 
-
 fn get_source_connections(edges: &Vec<(u32, u32)>, nodes: &Vec<u32>) -> Vec<(u32, Vec<u32>)> {
     let mut node_connections = Vec::new();
     for &node in nodes {
@@ -77,56 +91,58 @@ fn get_source_connections(edges: &Vec<(u32, u32)>, nodes: &Vec<u32>) -> Vec<(u32
     node_connections
 }
 
-// //finding distances using BFS
-// type Vertex = usize;
-// type ListOfEdges = Vec<(Vertex,Vertex)>;
-// type AdjacencyLists = Vec<Vec<Vertex>>;
+// Finding distances using BFS
+type Vertex = usize;
+type ListOfEdges = Vec<(Vertex, Vertex)>;
+type AdjacencyLists = Vec<Vec<Vertex>>;
 
-// #[derive(Debug)]
-// struct Graph {
-//     n: usize, // vertex labels in {0,...,n-1}
-//     outedges: AdjacencyLists,
-// }
+#[derive(Debug)]
+struct Graph {
+    n: usize, // vertex labels in {0,...,n-1}
+    outedges: AdjacencyLists,
+}
 
-// // reverse direction of edges on a list
-// fn reverse_edges(list:&ListOfEdges)
-//         -> ListOfEdges {
-//     let mut new_list = vec![];
-//     for (u,v) in list {
-//         new_list.push((*v,*u));
-//     }
-//     new_list
-// }
+// Reverse direction of edges on a list
+fn reverse_edges(list: &ListOfEdges) -> ListOfEdges {
+    let mut new_list = vec![];
+    for (u, v) in list {
+        new_list.push((*v, *u));
+    }
+    new_list
+}
 
-// impl Graph {
-//     fn add_directed_edges(&mut self,
-//                           edges:&ListOfEdges) {
-//         for (u,v) in edges {
-//             self.outedges[*u].push(*v);
-//         }
-//     }
-//     fn sort_graph_lists(&mut self) {
-//         for l in self.outedges.iter_mut() {
-//             l.sort();
-//         }
-//     }
-//     fn create_directed(n:usize,edges:&ListOfEdges)
-//                                             -> Graph {
-//         let mut g = Graph{n,outedges:vec![vec![];n]};
-//         g.add_directed_edges(edges);
-//         g.sort_graph_lists();
-//         g                                        
-//     }
-    
-//     fn create_undirected(n:usize,edges:&ListOfEdges)
-//                                             -> Graph {
-//         let mut g = Self::create_directed(n,edges);
-//         g.add_directed_edges(&reverse_edges(edges));
-//         g.sort_graph_lists();
-//         g                                        
-//     }
-// }
-// fn adjacency_list(){
+impl Graph {
+    fn add_directed_edges(&mut self, edges: &ListOfEdges) {
+        for (u, v) in edges {
+            self.outedges[*u].push(*v);
+        }
+    }
+
+    fn sort_graph_lists(&mut self) {
+        for l in self.outedges.iter_mut() {
+            l.sort();
+        }
+    }
+
+    fn create_directed(n: usize, edges: &ListOfEdges) -> Graph {
+        let mut g = Graph { n, outedges: vec![vec![]; n] };
+        g.add_directed_edges(edges);
+        g.sort_graph_lists();
+        g
+    }
+
+    fn create_undirected(n: usize, edges: &ListOfEdges) -> Graph {
+        let mut g = Self::create_directed(n, edges);
+        g.add_directed_edges(&reverse_edges(edges));
+        g.sort_graph_lists();
+        g
+    }
+}
+
+
+
+
+// fn adjacency_list(edges: &Vec<(u32, u32)>){
 //     let n: usize = 10;
 //     let mut edges: ListOfEdges = vec![(0,1),(0,2),(1,2),(2,4),(2,3),(4,3),(4,5),(5,6),(4,6),(6,8),(6,7),(8,7),(1,9)];
 //     edges.sort();
