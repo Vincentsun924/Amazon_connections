@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use rand::seq::SliceRandom;
+use std::collections::VecDeque;
 
 fn read_file(path: &str) -> Vec<(u32, u32)> {
     let mut result = Vec::new();
@@ -37,7 +38,7 @@ fn main() {
     for (node, connections) in &node_connections {
         let formatted_connections = connections
             .iter()
-            .map(|&dest| (node.clone(), dest)) // Clone node to avoid moving it
+            .map(|&dest| (*node, dest)) // Source node is not cloned
             .collect::<Vec<(u32, u32)>>(); // Store as vector of tuples
         node_connections_formatted.extend(formatted_connections);
     }
@@ -51,14 +52,17 @@ fn main() {
         .map(|&(src, dest)| (src as usize, dest as usize))
         .collect::<ListOfEdges>();
     edges_flat.sort();
-    let graph = Graph::create_undirected(n, &edges_flat);
+    let graph = Graph::create_directed(n, &edges_flat); // Create a directed graph
     for (i, l) in graph.outedges.iter().enumerate() {
         if !l.is_empty() { // Print only if the connection list is not empty
             println!("{}: {:?}", i, l);
         }
     }
-}
 
+    // Compute distances
+    let nodes: Vec<Vertex> = nodes.iter().map(|&x| x as Vertex).collect();
+    compute_distance(&graph, nodes);
+}
 
 // Test
 
@@ -102,15 +106,6 @@ struct Graph {
     outedges: AdjacencyLists,
 }
 
-// Reverse direction of edges on a list
-fn reverse_edges(list: &ListOfEdges) -> ListOfEdges {
-    let mut new_list = vec![];
-    for (u, v) in list {
-        new_list.push((*v, *u));
-    }
-    new_list
-}
-
 impl Graph {
     fn add_directed_edges(&mut self, edges: &ListOfEdges) {
         for (u, v) in edges {
@@ -130,43 +125,31 @@ impl Graph {
         g.sort_graph_lists();
         g
     }
-
-    fn create_undirected(n: usize, edges: &ListOfEdges) -> Graph {
-        let mut g = Self::create_directed(n, edges);
-        g.add_directed_edges(&reverse_edges(edges));
-        g.sort_graph_lists();
-        g
-    }
 }
 
+fn compute_distance(graph: &Graph, start_nodes: Vec<usize>) {
+    // Keep track of visited nodes
+    let mut visited = vec![false; graph.n];
 
+    // Initialize the queue with start nodes
+    let mut queue = VecDeque::new();
+    for &start_node in &start_nodes {
+        visited[start_node] = true;
+        queue.push_back((start_node, 0)); // Start nodes are at distance 0
+    }
 
-
-// fn adjacency_list(edges: &Vec<(u32, u32)>){
-//     let n: usize = 10;
-//     let mut edges: ListOfEdges = vec![(0,1),(0,2),(1,2),(2,4),(2,3),(4,3),(4,5),(5,6),(4,6),(6,8),(6,7),(8,7),(1,9)];
-//     edges.sort();
-//     println!("{:?}",edges);
-//     let graph = Graph::create_undirected(n,&edges);
-//     for (i, l) in graph.outedges.iter().enumerate() {
-//         println!("{} {:?}", i, *l);
-//     }
-// }
-
-// fn compute_distance(){
-//     let start: Vertex = 2; // <= we'll start from this vertex
-
-//     let mut distance: Vec<Option<u32>> = vec![None;graph.n];
-//     distance[start] = Some(0); // <= we know this distance
-
-//     use std::collections::VecDeque;
-//     let mut queue: VecDeque<Vertex> = VecDeque::new();
-//     queue.push_back(start);
-
-//     print!("vertex:distance");
-//     for v in 0..graph.n {
-//         print!("   {}:{}",v,distance[v].unwrap());
-//     }
-//     println!();
-// }
-
+    println!("Vertex: Distance");
+    // BFS traversal
+    while let Some((node, distance)) = queue.pop_front() {
+        println!("{}: {}", node, distance);
+        // Explore neighbors of the current node
+        for &neighbor in &graph.outedges[node] {
+            // If the neighbor has not been visited yet
+            if !visited[neighbor] {
+                visited[neighbor] = true;
+                // Add the neighbor to the queue with updated distance
+                queue.push_back((neighbor, distance + 1));
+            }
+        }
+    }
+}
