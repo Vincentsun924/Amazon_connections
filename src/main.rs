@@ -1,7 +1,9 @@
+//used resources such as Chatgpt to write the test function and lecture notes in lec. 28
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use rand::seq::SliceRandom;
 use std::collections::VecDeque;
+
 //import the read_file function from the read.rs module
 mod read;
 use read::read_file;
@@ -69,10 +71,25 @@ fn main() {
    println!("Average distance from original nodes: {}", average_distance);
 }
 
+
 //test that the 5 selected nodes each have at least something connected to it
+//test that the 5 selected nodes each have at least something connected to it
+use std::env;
+use std::path::PathBuf;
+
 #[test]
 fn test_nodes_connections() {
-    let edges = read_file("amazon.txt");
+    // Get the current directory
+    let current_dir = env::current_dir().expect("Failed to get current directory");
+
+    // Construct the path to "amazon.txt" relative to the current directory
+    let file_path = current_dir.join("src").join("amazon.txt");
+
+    // Convert the path to a string
+    let file_path_str = file_path.to_str().expect("Failed to convert path to string");
+
+    // Use the read_file function with the correct file path
+    let edges = read_file(file_path_str);
     let nodes = samples(&edges);
 
     // Get the source nodes and their connections
@@ -84,3 +101,4 @@ fn test_nodes_connections() {
         assert!(!connections.is_empty(), "Node {} should have at least one connection", node);
     }
 }
+
