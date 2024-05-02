@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use rand::seq::SliceRandom;
-use std::collections::VecDeque;
+
+
 
 //reads the txt file and extract the values based on separeated tabs
 pub fn read_file(path: &str) -> Vec<(u32, u32)> {

@@ -1,9 +1,3 @@
-//used resources such as Chatgpt to write the test function and lecture notes in lec. 28
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use rand::seq::SliceRandom;
-use std::collections::VecDeque;
-
 //import the read_file function from the read.rs module
 mod read;
 use read::read_file;
@@ -74,8 +68,7 @@ fn main() {
 
 //test that the 5 selected nodes each have at least something connected to it
 //test that the 5 selected nodes each have at least something connected to it
-use std::env;
-use std::path::PathBuf;
+
 
 #[test]
 fn test_nodes_connections() {
