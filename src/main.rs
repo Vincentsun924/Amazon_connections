@@ -67,7 +67,6 @@ fn main() {
 
 
 //test that the 5 selected nodes each have at least something connected to it
-//test that the 5 selected nodes each have at least something connected to it
 use std::env;
 
 
@@ -96,3 +95,54 @@ fn test_nodes_connections() {
     }
 }
 
+
+
+
+#[test]
+fn test_compute_and_print_distance_bfs() {
+    // Get the current directory
+    let current_dir = std::env::current_dir().expect("Failed to get current directory");
+
+    // Construct the path to "amazon.txt" relative to the current directory
+    let file_path = current_dir.join("src").join("amazon.txt");
+
+    // Convert the path to a string
+    let file_path_str = file_path.to_str().expect("Failed to convert path to string");
+
+    // Use the read_file function with the correct file path
+    let edges = read_file(file_path_str);
+    let nodes = samples(&edges);
+
+    // Calculate the maximum node number
+    let max_node = edges.iter().map(|&(src, dest)| src.max(dest)).max().unwrap_or(0);
+    let n = max_node as usize + 1;
+
+    // Get the source nodes and their connections
+    let node_connections = get_source_connections(&edges, &nodes);
+
+    // Create a directed graph
+    let mut edges_flat = ListOfEdges::new();
+    for &(src, ref connections) in &node_connections {
+        for &dest in connections {
+            edges_flat.push((src as usize, dest as usize));
+        }
+    }
+    edges_flat.sort();
+    let graph = Graph::create_directed(n, &edges_flat);
+
+    // For each node, compute distances using BFS
+    for &node in &nodes {
+        let distances = compute_and_print_distance_bfs(node as Vertex, &graph);
+
+        // Verify that the distance from the node to itself is zero
+        let self_distance = distances.iter().find(|&&(n, _)| n == node as usize);
+        assert_eq!(self_distance.unwrap().1, 0);
+
+        // Verify that all other distances are greater than zero
+        for &(n, dist) in &distances {
+            if n != node as usize {
+                assert!(dist > 0);
+            }
+        }
+    }
+}
